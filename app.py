@@ -65,16 +65,17 @@ if st.button("🔍 Predict Marks", use_container_width=True):
 
     st.success(f"### 📊 Predicted Marks: **{predicted_mark}**")
 
-    # Feedback based on score range from dataset (~5.6 to ~54.3)
-    if predicted_mark >= 40:
+    # Feedback thresholds based on actual CSV distribution:
+    # Min=5.6, 25th%=12.6, 50th%=20.1, 75th%=36.7, Max=55.3
+    if predicted_mark >= 36.7:
         st.balloons()
-        st.info("🌟 Excellent! This student is expected to perform very well.")
-    elif predicted_mark >= 25:
-        st.info("👍 Good performance expected. A little more effort goes a long way!")
-    elif predicted_mark >= 15:
-        st.warning("📖 Average performance. Consider increasing study time.")
+        st.info("🌟 Excellent! Top 25% performance — this student is doing great!")
+    elif predicted_mark >= 20.1:
+        st.info("👍 Good performance! Above average compared to other students.")
+    elif predicted_mark >= 12.6:
+        st.warning("📖 Below average. More study time is recommended.")
     else:
-        st.error("⚠️ Low marks predicted. Significant improvement in study habits is recommended.")
+        st.error("⚠️ Low marks predicted. This student is in the bottom 25% — significant improvement needed.")
 
 st.divider()
 st.caption("Built with ❤️ using Streamlit | Linear Regression Model | Dataset: Student_Marks.csv")
