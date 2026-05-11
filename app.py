@@ -6,7 +6,7 @@ import pickle
 # LOAD MODEL + FEATURES
 # ================================
 model = pickle.load(open("model.pkl", "rb"))
-features = pickle.load(open("features.pkl", "rb"))
+features = pickle.load(open("model.pkl", "rb"))
 
 st.title("🎓 Student Marks Predictor")
 
