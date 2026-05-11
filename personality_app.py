@@ -1,15 +1,12 @@
 import streamlit as st
 import pickle
-import numpy as np
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.impute import SimpleImputer
 
 # ================================
 # Load Model
 # ================================
-with open('personalitymodel.pkl', 'rb') as file:
-    model = pickle.load(file)
+with open('personalitymodel.pkl', 'rb') as f:
+    model = pickle.load(f)
 
 # ================================
 # App Config
@@ -26,14 +23,15 @@ st.divider()
 
 # ================================
 # Input Features
-# Ranges taken directly from personality.csv
-# Time_spent_Alone   : 0 – 11
-# Social_event_att.  : 0 – 10
-# Going_outside      : 0 – 7
-# Friends_circle_size: 0 – 15
-# Post_frequency     : 0 – 10
-# Stage_fear         : No / Yes
-# Drained_after_soc. : No / Yes
+# All ranges taken directly from personality.csv
+#
+# EXTROVERT profile (CSV medians):
+#   Time_alone=2, Social=6, Outside=5, Friends=9, Post=6
+#   Stage_fear=No, Drained=No
+#
+# INTROVERT profile (CSV medians):
+#   Time_alone=7, Social=2, Outside=1, Friends=3, Post=1
+#   Stage_fear=Yes, Drained=Yes
 # ================================
 st.subheader("📋 Tell Us About Yourself")
 
@@ -43,92 +41,75 @@ with col1:
     time_spent_alone = st.slider(
         "🏠 Time Spent Alone (hrs/day)",
         min_value=0, max_value=11, value=4, step=1,
-        help="How many hours per day do you spend alone?"
+        help="Introvert: usually 5–11 hrs | Extrovert: usually 0–3 hrs"
     )
-
     social_event_attendance = st.slider(
         "🎉 Social Event Attendance (per month)",
         min_value=0, max_value=10, value=4, step=1,
-        help="How many social events do you attend per month?"
+        help="Introvert: usually 0–3 | Extrovert: usually 5–10"
     )
-
     going_outside = st.slider(
         "🚶 Going Outside (days/week)",
         min_value=0, max_value=7, value=3, step=1,
-        help="How many days a week do you go outside?"
+        help="Introvert: usually 0–2 days | Extrovert: usually 4–7 days"
     )
-
     friends_circle_size = st.slider(
         "👥 Friends Circle Size",
         min_value=0, max_value=15, value=7, step=1,
-        help="How many close friends do you have?"
+        help="Introvert: usually 0–5 | Extrovert: usually 7–15"
     )
 
 with col2:
     post_frequency = st.slider(
         "📱 Post Frequency (per week)",
-        min_value=0, max_value=10, value=5, step=1,
-        help="How many times do you post on social media per week?"
+        min_value=0, max_value=10, value=4, step=1,
+        help="Introvert: usually 0–2 | Extrovert: usually 4–10"
     )
-
     stage_fear = st.selectbox(
         "🎤 Do you have Stage Fear?",
         options=["No", "Yes"],
-        help="Do you feel nervous speaking or performing in public?"
+        help="92% of Introverts say Yes | 93% of Extroverts say No"
     )
-
     drained_after_socializing = st.selectbox(
         "😓 Drained After Socializing?",
         options=["No", "Yes"],
-        help="Do you feel tired or exhausted after spending time with people?"
+        help="92% of Introverts say Yes | 93% of Extroverts say No"
     )
 
 st.divider()
 
 # ================================
-# Encode Categorical
-# Training used LabelEncoder — encodes alphabetically
-# No = 0, Yes = 1
+# Encode — No=0, Yes=1
 # ================================
-stage_fear_encoded = 1 if stage_fear == "Yes" else 0
-drained_encoded = 1 if drained_after_socializing == "Yes" else 0
+stage_fear_enc = 1 if stage_fear == "Yes" else 0
+drained_enc    = 1 if drained_after_socializing == "Yes" else 0
 
 # ================================
-# Build Input — same column order as training
+# Build Input — exact column order from training
 # ================================
 input_df = pd.DataFrame([[
-    time_spent_alone,
-    stage_fear_encoded,
-    social_event_attendance,
-    going_outside,
-    drained_encoded,
-    friends_circle_size,
-    post_frequency
+    float(time_spent_alone),
+    float(stage_fear_enc),
+    float(social_event_attendance),
+    float(going_outside),
+    float(drained_enc),
+    float(friends_circle_size),
+    float(post_frequency)
 ]], columns=[
     'Time_spent_Alone',
-    'Stage_fear',
+    'Stage_fear_enc',
     'Social_event_attendance',
     'Going_outside',
-    'Drained_after_socializing',
+    'Drained_enc',
     'Friends_circle_size',
     'Post_frequency'
 ])
 
 # ================================
-# Preprocess — match training pipeline exactly
-# ================================
-imputer = SimpleImputer(strategy='mean')
-input_imputed = imputer.fit_transform(input_df)
-
-scaler = StandardScaler()
-input_scaled = scaler.fit_transform(input_imputed)
-
-# ================================
-# Predict
+# Predict — no scaling needed (RandomForest)
 # ================================
 if st.button("🔍 Predict My Personality", use_container_width=True):
-    prediction = model.predict(input_scaled)
-    result = prediction[0]  # "Extrovert" or "Introvert"
+    result = model.predict(input_df)[0]
 
     st.divider()
 
@@ -151,12 +132,8 @@ if st.button("🔍 Predict My Personality", use_container_width=True):
         - 🏠 Quiet environments over loud, crowded places
         """)
 
-    # ================================
-    # Input Summary
-    # ================================
     st.divider()
     st.subheader("📊 Your Input Summary")
-
     c1, c2 = st.columns(2)
     with c1:
         st.metric("🏠 Time Alone",          f"{time_spent_alone} hrs/day")
